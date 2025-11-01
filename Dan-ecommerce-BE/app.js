@@ -21,8 +21,30 @@ connectDb()
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+
+// app.use(cors({
+//   origin: "http://localhost:5173",
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+//   credentials: true
+// }));
+
+const allowedOrigins = [
+  "http://localhost:5173",            
+  "https://dan-ecommerce-fe-final.vercel.app/" 
+];
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn("❌ Blocked by CORS:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
