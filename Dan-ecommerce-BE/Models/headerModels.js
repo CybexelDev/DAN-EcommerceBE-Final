@@ -7,7 +7,6 @@ const headerSchema = new mongoose.Schema({
     },
       productId: {
         type: String,
-        required: true,
     },
     
 });

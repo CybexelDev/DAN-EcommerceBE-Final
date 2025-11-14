@@ -14,7 +14,7 @@ const productSchema = new mongoose.Schema({
     subCategory: { type: String, required: false },
     subCategoryId: {type: String, required: false},
     discount: { type: Number, default: 0, min: 0, max: 100 },
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: Date.now },
 
 })
 

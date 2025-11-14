@@ -640,12 +640,11 @@ const createCheckoutSession = async (req, res) => {
 
 
 const handlePaymentSuccess = async (req, res) => {
-  console.log("handlePaymentSuccess called >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
-  console.log("Order model type6666666:", typeof Order);
 
   try {
-    const { sessionId, userId } = req.body;
+    const { sessionId, userId, address } = req.body;
+
+    console.log("handlePaymentSuccess called with:", req.body);
 
     // ✅ 1. Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -668,6 +667,7 @@ const handlePaymentSuccess = async (req, res) => {
           price: p.discountedRate,
           quantity: p.quantity,
         })),
+        address: address,
         totalAmount: session.amount_total / 100,
         paymentStatus: "paid",
         orderStatus : "pending",
@@ -823,6 +823,23 @@ const getCategoryPopularProduct = async (req, res) => {
 };
 
 
+const getProductsBySubCategory = async (req, res) => {
+  try {
+    const { subCategoryId } = req.params;
+
+    // Find all products matching this subcategory
+    const products = await PRODUCT.find({ subCategoryId });
+
+    // if (!products || products.length === 0) {
+    //   return res.status(404).json({ message: "No products found for this subcategory" });
+    // }
+
+    res.status(200).json({message:"sub Category Product fetched", data: products});
+  } catch (error) {
+    console.error("Error fetching subcategory products:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
 
 
 
@@ -852,5 +869,6 @@ module.exports = {
   createCheckoutSession,
   handlePaymentSuccess,
   getUserOrders,
-  getCategoryPopularProduct
+  getCategoryPopularProduct,
+  getProductsBySubCategory
 }

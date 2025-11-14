@@ -19,6 +19,19 @@ const orderSchema = new mongoose.Schema(
         quantity: Number,
       },
     ],
+     address: [
+      {
+        addressType: { type: String, required: true },
+        fullName: { type: String, required: true },
+        phoneNumber: { type: String, required: true },
+        houseNo: { type: String },
+        area: { type: String },
+        landmark: { type: String },
+        city: { type: String },
+        state: { type: String },
+        pincode: { type: String },
+      },
+    ],
     totalAmount: {
       type: Number,
       required: true,

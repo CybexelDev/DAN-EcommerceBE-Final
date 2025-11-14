@@ -1,5 +1,7 @@
 const { response } = require('express');
 const ObjectId = require('mongoose').Types.ObjectId
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const PRODUCT = require('../Models/productModel');
 const CATEGORY = require('../Models/categoryModel');
 const BLOGS = require('../Models/blogModel')
@@ -7,6 +9,10 @@ const HEADER = require('../Models/headerModels')
 const BRAND = require('../Models/brandModels')
 const VOUCHER = require('../Models/voucher')
 const TESTIMONIAL = require('../Models/testimonialModels')
+const ORDER = require('../Models/orderModels')
+const USERS = require('../Models/userModel')
+const ADMIN = require('../Models/adminLoginModels')
+
 
 const addProduct = async (req, res) => {
   try {
@@ -25,7 +31,7 @@ const addProduct = async (req, res) => {
       category: req.body.category,
       categoryId: req.body.categoryId,
       subCategory: req.body.subCategory,
-      subCategoryId: req.body.categoryId,
+      subCategoryId: req.body.subCategoryId,
       discount: req.body.discount || 0,
       date: req.body.date || Date.now(),
     });
@@ -492,6 +498,177 @@ const getHeader = async (req, res) => {
 };
 
 
+const getOrders = async (req, res) => {
+  try {
+    const order = await ORDER.find().sort({ createdAt: -1 }); 
+    res.status(200).json({
+      message: "Order fetched successfully",
+      data: order,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
+
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId, orderStatus } = req.body;
+
+    if (!orderId || !orderStatus) {
+      return res.status(400).json({ message: "Order ID and orderStatus are required" });
+    }
+
+    // Update order and automatically refresh updatedAt
+    const updatedOrder = await ORDER.findByIdAndUpdate(
+      orderId,
+      {
+        orderStatus,
+        updatedAt: new Date(), // <-- ensures timestamp refresh
+      },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({
+      message: "Order status updated successfully",
+      data: updatedOrder,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating order status",
+      error: error.message,
+    });
+  }
+};
+
+const getTestimonials = async (req, res) => {
+  try {
+    const testimonials = await TESTIMONIAL.find();
+    res.status(200).json({ message: "Testimonials fetched successfully", data: testimonials });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getUsers = async (req, res) => {
+  try {
+    const user = await USERS.find();
+    res.status(200).json({ message: "Testimonials fetched successfully", data: user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+const deleteUser = async (req, res) => {
+  try {
+    const id = req.body.id; 
+    const user = await USERS.findByIdAndDelete(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    } 
+    res.status(200).json({ message: "User deleted successfully", data: user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } 
+};
+
+
+const getDashboardCounts = async (req, res) => {
+  try {
+    const [productCount, categoryCount, userCount, orderCount] = await Promise.all([
+      PRODUCT.countDocuments(),
+      CATEGORY.countDocuments(),
+      USERS.countDocuments(),
+      ORDER.countDocuments(),
+    ]);
+
+    res.status(200).json({
+      message: "Dashboard counts fetched successfully",
+      data: {
+        products: productCount,
+        categories: categoryCount,
+        users: userCount,
+        orders: orderCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard counts:", error);
+    res.status(500).json({
+      message: "Failed to fetch dashboard counts",
+      error: error.message,
+    });
+  }
+};
+
+
+const createAdmin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const adminExists = await ADMIN.findOne({ username });
+    if (adminExists) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const admin = await ADMIN.create({
+      username,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({ message: "Admin created successfully", admin });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+const loginAdmin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // console.log(req.body, "llllllllllllllllll");
+    
+
+    const admin = await ADMIN.findOne({ username });
+    if (!admin) {
+      return res.status(400).json({ message: "Invalid username or password" });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid username or password" });
+    }
+    const JWT_SECRET = process.env.JWT_SECRET
+    const token = jwt.sign({ id: admin._id, role: admin.role }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      admin: {
+        id: admin._id,
+        username: admin.username,
+        role: admin.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
+
 module.exports = {
   addProduct,
   addCategory,
@@ -514,5 +691,13 @@ module.exports = {
   getProduct,
   getcategory,
   getHeader,
-  getBlogs
+  getBlogs,
+  getOrders,
+  updateOrderStatus,
+  getTestimonials,
+  getUsers,
+  deleteUser,
+  getDashboardCounts,
+  createAdmin,
+  loginAdmin,
 }

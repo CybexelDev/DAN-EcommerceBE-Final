@@ -26,7 +26,8 @@ const { addUserData,
     createCheckoutSession,
     handlePaymentSuccess,
     getUserOrders,
-    getCategoryPopularProduct
+    getCategoryPopularProduct,
+    getProductsBySubCategory
 } = require('../Controllers/userController')
 
 // router.post('/addUser', addUserData)
@@ -56,6 +57,6 @@ router.post('/create-checkout-session', createCheckoutSession)
 router.post('/PaymentSuccess', handlePaymentSuccess);
 router.get('/getUserOrder/:userId', getUserOrders);
 router.get('/getCategoryPopularProduct', getCategoryPopularProduct);
-
+router.get('/getSubcategory/:subCategoryId', getProductsBySubCategory);
 
 module.exports = router;
