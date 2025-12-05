@@ -635,8 +635,6 @@ const loginAdmin = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // console.log(req.body, "llllllllllllllllll");
-    
 
     const admin = await ADMIN.findOne({ username });
     if (!admin) {
@@ -662,6 +660,39 @@ const loginAdmin = async (req, res) => {
       },
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getSalesByDate = async (req, res) => {
+  try {
+    let { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "Start date and end date required" });
+    }
+
+    // Convert incoming ISO strings to Date objects
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Extend end date to include the full day
+    end.setHours(23, 59, 59, 999);
+
+    const sales = await ORDER.find({
+      createdAt: {
+        $gte: start,
+        $lte: end,
+      },
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Sales fetched by date",
+      data: sales,
+    });
+  } catch (error) {
+    console.error("Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -700,4 +731,5 @@ module.exports = {
   getDashboardCounts,
   createAdmin,
   loginAdmin,
+  getSalesByDate,
 }

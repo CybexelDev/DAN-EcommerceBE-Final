@@ -30,14 +30,6 @@ const Order = require('../Models/orderModels');
 //   }
 // }
 
-const getUsers = async (req, res) => {
-  try {
-    const users = await USER.find();
-    res.json(users)
-  } catch (error) {
-    res.status(500).send(error)
-  }
-}
 
 const getProduct = async (req, res) => {
   try {
@@ -783,7 +775,7 @@ const getUserOrders = async (req, res) => {
 
 const getCategoryPopularProduct = async (req, res) => {
   try {
-    const { categoryId } = req.body; // 👈 read from body
+    const { categoryId } = req.query; 
 
     if (!categoryId) {
       return res.status(400).json({ message: "Category ID is required" });
@@ -792,8 +784,8 @@ const getCategoryPopularProduct = async (req, res) => {
     const popular = await PRODUCT.aggregate([
       {
         $match: {
-          categoryId: new mongoose.Types.ObjectId(categoryId), // match categoryId
-          starRating: { $gte: 3.9 }, // only popular
+          categoryId: categoryId, 
+          starRating: { $gte: 3 }, 
         },
       },
       {
@@ -805,6 +797,7 @@ const getCategoryPopularProduct = async (req, res) => {
           images: 1,
           productName: 1,
           rate: 1,
+          discountedRate: 1,
           category: 1,
           discount: 1,
         },
@@ -842,6 +835,139 @@ const getProductsBySubCategory = async (req, res) => {
 };
 
 
+const getCategorylatestProduct = async (req, res) => {
+  try {
+    const { categoryId } = req.query;
+
+    console.log(categoryId, "categoryId in getCategoryPopularProduct >>>>>");
+
+    if (!categoryId) {
+      return res.status(400).json({ message: "Category ID is required" });
+    }
+
+    const popular = await PRODUCT.aggregate([
+      {
+        $match: {
+          categoryId: categoryId, 
+        },
+      },
+      {
+        $sort: { date: -1 }, 
+      },
+      {
+        $project: {
+          _id: 1,
+          images: 1,
+          productName: 1,
+          rate: 1,
+          discountedRate: 1,
+          category: 1,
+          discount: 1,
+          date: 1, 
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "latest products fetched successfully",
+      data: popular,
+    });
+  } catch (error) {
+    console.error("Error fetching category latest products:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+const getCategoryHighToLowRateProduct = async (req, res) => {
+  try {
+    const { categoryId } = req.query;
+
+    console.log(categoryId, "categoryId in getCategoryPopularProduct >>>>>");
+
+    if (!categoryId) {
+      return res.status(400).json({ message: "Category ID is required" });
+    }
+
+    const popular = await PRODUCT.aggregate([
+      {
+        $match: {
+          categoryId: categoryId, 
+        },
+      },
+      {
+        $sort: { rate: -1 }, 
+      },
+      {
+        $project: {
+          _id: 1,
+          images: 1,
+          productName: 1,
+          rate: 1,
+          discountedRate: 1,
+          category: 1,
+          discount: 1,
+          date: 1, 
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "latest products fetched successfully",
+      data: popular,
+    });
+  } catch (error) {
+    console.error("Error fetching category latest products:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+const getCategoryLowToHighRateProduct = async (req, res) => {
+  try {
+    const { categoryId } = req.query;
+
+    if (!categoryId) {
+      return res.status(400).json({ message: "Category ID is required" });
+    }
+    const popular = await PRODUCT.aggregate([
+      {
+        $match: {
+          categoryId: categoryId, 
+        },
+      },
+      {
+        $sort: { rate: 1 }, 
+      },
+      {
+        $project: {
+          _id: 1,
+          images: 1,
+          productName: 1,
+          rate: 1,
+          discountedRate: 1,
+          category: 1,
+          discount: 1,
+          date: 1, 
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "LowToHighRateProduct products fetched successfully",
+      data: popular,
+    });
+  } catch (error) {
+    console.error("Error fetching category LowToHighRateProduct products:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
 
 module.exports = {
   getProduct,
@@ -850,7 +976,6 @@ module.exports = {
   getPopularProduct,
   getBlogs,
   getCategoryProduct,
-  getUsers,
   addToCart,
   getCart,
   addAddress,
@@ -870,5 +995,8 @@ module.exports = {
   handlePaymentSuccess,
   getUserOrders,
   getCategoryPopularProduct,
-  getProductsBySubCategory
+  getProductsBySubCategory,
+  getCategorylatestProduct,
+  getCategoryHighToLowRateProduct,
+  getCategoryLowToHighRateProduct
 }

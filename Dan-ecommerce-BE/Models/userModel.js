@@ -15,11 +15,21 @@ const addressSchema = new mongoose.Schema({
 
 
 const userSchema = new mongoose.Schema({
-  phone: { type: String, unique: true, parse: true },
+  phone: { 
+    type: String, 
+    unique: true, 
+    sparse: true,  // sparse index allows multiple nulls
+    default: null 
+  },
   otp: String,
   otpExpire: Date,
 
-  email: { type: String, unique: true, sparse: true },
+  email: { 
+    type: String, 
+    unique: true, 
+    sparse: true,  // sparse index allows multiple nulls
+    default: null 
+  },
   emailOtp: String,
   emailOtpExpire: Date,
   isEmailVerified: { type: Boolean, default: false },
