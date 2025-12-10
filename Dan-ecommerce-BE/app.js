@@ -30,7 +30,8 @@ app.set('view engine', 'jade');
 
 const allowedOrigins = [
   "http://localhost:5173",            
-  "https://dan-ecommerce-fe-final.vercel.app" 
+  "https://dan-ecommerce-fe-final.vercel.app" ,
+  "https://dan-ecommerce-fe-final-s8t9.vercel.app"
 ];
 
 app.use(cors({
