@@ -286,6 +286,37 @@ const verifyOtp = async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // const sendEmailOtp = async (req, res) => {
 //   try {
 //     const { email } = req.body;
@@ -445,11 +476,160 @@ const verifyOtp = async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const sendEmailOtp = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+
+//     console.log("📧 OTP request started for:", email);
+
+//     if (!email) {
+//       return res.status(400).json({ 
+//         success: false,
+//         error: "Email is required" 
+//       });
+//     }
+
+//     // Validate email format
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     if (!emailRegex.test(email)) {
+//       return res.status(400).json({ 
+//         success: false,
+//         error: "Please enter a valid email address" 
+//       });
+//     }
+
+//     // IMMEDIATELY send response - don't wait for email
+//     res.status(200).json({
+//       success: true,
+//       message: "OTP is being sent to your email. Please check your inbox.",
+//       processing: true
+//     });
+
+//     // Now process in background (async)
+//     processOtpRequest(email).catch(err => {
+//       console.error("Background OTP processing error:", err);
+//     });
+
+//   } catch (error) {
+//     console.error("Initial request error:", error);
+//     res.status(500).json({
+//       success: false,
+//       error: "Unable to process request"
+//     });
+//   }
+// };
+
+// // Separate async function for processing
+// const processOtpRequest = async (email) => {
+//   try {
+//     console.log("🔄 Background processing OTP for:", email);
+    
+//     // Find or create user
+//     let user = await USER.findOne({ email });
+//     const otp = crypto.randomInt(100000, 999999).toString();
+//     console.log("Generated OTP:", otp);
+
+//     if (user) {
+//       // Login flow
+//       console.log("User exists, updating OTP");
+//       user.emailOtp = otp;
+//       user.emailOtpExpire = Date.now() + 5 * 60 * 1000;
+//       await user.save();
+//     } else {
+//       // Signup flow
+//       console.log("Creating new user");
+//       const uniquePhone = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+//       user = new USER({
+//         email,
+//         phone: uniquePhone,
+//         isEmailVerified: false,
+//         emailOtp: otp,
+//         emailOtpExpire: Date.now() + 5 * 60 * 1000
+//       });
+      
+//       await user.save();
+//     }
+
+//     console.log("📤 Sending email to:", email);
+    
+//     // Send email (with timeout)
+//     await sendEmailWithTimeout(email, "Your Verification Code", otp);
+    
+//     console.log("✅ OTP processing completed for:", email);
+
+//   } catch (error) {
+//     console.error("❌ Background processing failed:", error);
+//     // Log error but don't affect user - they already got response
+//   }
+// };
+
+// // Email function with timeout
+// const sendEmailWithTimeout = (to, subject, otp) => {
+//   return new Promise((resolve, reject) => {
+//     // Set timeout of 10 seconds for email sending
+//     const timeout = setTimeout(() => {
+//       console.log("Email sending timeout for:", to);
+//       resolve(); // Don't reject, just log timeout
+//     }, 10000);
+
+//     sendEmail(to, subject, `Your OTP is: ${otp}`)
+//       .then(() => {
+//         clearTimeout(timeout);
+//         console.log("Email sent successfully to:", to);
+//         resolve();
+//       })
+//       .catch(err => {
+//         clearTimeout(timeout);
+//         console.error("Email sending error for:", to, err);
+//         resolve(); // Still resolve to not break the flow
+//       });
+//   });
+// };
+
+
+
+
+
+
+
+
+
+
+
+
 const sendEmailOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
-    console.log("📧 OTP request started for:", email);
+    console.log("📧 OTP request for:", email);
 
     if (!email) {
       return res.status(400).json({ 
@@ -458,7 +638,6 @@ const sendEmailOtp = async (req, res) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
@@ -467,94 +646,94 @@ const sendEmailOtp = async (req, res) => {
       });
     }
 
-    // IMMEDIATELY send response - don't wait for email
-    res.status(200).json({
-      success: true,
-      message: "OTP is being sent to your email. Please check your inbox.",
-      processing: true
-    });
-
-    // Now process in background (async)
-    processOtpRequest(email).catch(err => {
-      console.error("Background OTP processing error:", err);
-    });
-
-  } catch (error) {
-    console.error("Initial request error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Unable to process request"
-    });
-  }
-};
-
-// Separate async function for processing
-const processOtpRequest = async (email) => {
-  try {
-    console.log("🔄 Background processing OTP for:", email);
-    
-    // Find or create user
-    let user = await USER.findOne({ email });
+    // 1. Generate OTP first (fast)
     const otp = crypto.randomInt(100000, 999999).toString();
     console.log("Generated OTP:", otp);
 
+    // 2. Find or create user (optimized)
+    let user = await USER.findOne({ email });
+    
     if (user) {
-      // Login flow
-      console.log("User exists, updating OTP");
-      user.emailOtp = otp;
-      user.emailOtpExpire = Date.now() + 5 * 60 * 1000;
-      await user.save();
+      // Update existing user
+      await USER.updateOne(
+        { _id: user._id },
+        { 
+          emailOtp: otp,
+          emailOtpExpire: Date.now() + 5 * 60 * 1000 
+        }
+      );
     } else {
-      // Signup flow
-      console.log("Creating new user");
-      const uniquePhone = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      user = new USER({
+      // Create new user with unique phone
+      const uniquePhone = `email-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      user = await USER.create({
         email,
         phone: uniquePhone,
         isEmailVerified: false,
         emailOtp: otp,
         emailOtpExpire: Date.now() + 5 * 60 * 1000
       });
-      
-      await user.save();
     }
 
-    console.log("📤 Sending email to:", email);
+    // 3. Send email WITH TIMEOUT
+    console.log("Attempting to send email...");
     
-    // Send email (with timeout)
-    await sendEmailWithTimeout(email, "Your Verification Code", otp);
-    
-    console.log("✅ OTP processing completed for:", email);
+    // Use Promise.race to timeout email sending after 10 seconds
+    const emailPromise = sendEmail(email, "Your Verification Code", `Your OTP is: ${otp}`);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Email timeout')), 10000)
+    );
+
+    try {
+      await Promise.race([emailPromise, timeoutPromise]);
+      console.log("✅ Email sent successfully");
+      
+      res.status(200).json({
+        success: true,
+        message: "OTP sent to your email successfully",
+        userId: user._id
+      });
+      
+    } catch (emailError) {
+      console.error("❌ Email sending failed:", emailError.message);
+      
+      // Still respond success if email fails (OTP is saved in DB)
+      res.status(200).json({
+        success: true,
+        message: "OTP generated successfully. Please check spam folder.",
+        userId: user._id,
+        otp: process.env.NODE_ENV === 'development' ? otp : undefined // Return OTP only in dev
+      });
+    }
 
   } catch (error) {
-    console.error("❌ Background processing failed:", error);
-    // Log error but don't affect user - they already got response
+    console.error("❌ Full error:", error);
+    
+    res.status(500).json({
+      success: false,
+      error: "Unable to process request. Please try again."
+    });
   }
 };
 
-// Email function with timeout
-const sendEmailWithTimeout = (to, subject, otp) => {
-  return new Promise((resolve, reject) => {
-    // Set timeout of 10 seconds for email sending
-    const timeout = setTimeout(() => {
-      console.log("Email sending timeout for:", to);
-      resolve(); // Don't reject, just log timeout
-    }, 10000);
 
-    sendEmail(to, subject, `Your OTP is: ${otp}`)
-      .then(() => {
-        clearTimeout(timeout);
-        console.log("Email sent successfully to:", to);
-        resolve();
-      })
-      .catch(err => {
-        clearTimeout(timeout);
-        console.error("Email sending error for:", to, err);
-        resolve(); // Still resolve to not break the flow
-      });
-  });
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
